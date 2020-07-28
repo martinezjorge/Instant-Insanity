@@ -1,6 +1,8 @@
 import math as math
+from itertools import combinations
 
-def cubesGenerator(colors):
+
+def cubes_generator(colors):
     cubes = []
     cube = []
     pair = []
@@ -14,159 +16,214 @@ def cubesGenerator(colors):
             cube = []
     return cubes
 
-def solve(cubes, solnNum):
 
+def solve_stack(cubes, visited, solution_num):
+    i = 7
     multiplicity = [0 for i in range(30)]
-
-    halfSolFlag = False
-
-    i = 0
+    half_sol_flag = False
+    half_sol_counter = 0
     while -1 < i < len(cubes):
-        movingForward = True
-        flag = False
-
+        moving_forward = True
+        next_half_solution = False
         for j in range(3):
 
-            if halfSolFlag == False and i == (len(cubes) - 1) and visited[i][j] == solnNum:
-
-                #print("This ran baby")
-                if j == 0:
-
-                    visited[i][j] = 0
-                    multiplicity[cubes[i][j][0]-1] -= 1
-                    multiplicity[cubes[i][j][1]-1] -= 1
-                    j += 1
-
-                elif j == 1:
-                    visited[i][j] = 0
-                    multiplicity[cubes[i][j][0]-1] -= 1
-                    multiplicity[cubes[i][j][1]-1] -= 1
-                    j += 1
-
-                elif j == 2:
-                    visited[i][j] = 0
-                    multiplicity[cubes[i][j][0]-1] -= 1
-                    multiplicity[cubes[i][j][1]-1] -= 1
-                    flag = True
-
-            if flag:
+            # this stops the dfs at the third thread
+            if i == 0 and solution_num == 1 and j == 2:
+                half_sol_flag = False
+                moving_forward = False
                 break
 
-            if visited[i][j] == 0 and multiplicity[cubes[i][j][0] - 1] + 1 < 3 and multiplicity[cubes[i][j][1] - 1] + 1 < 3:
-                visited[i][j] = solnNum
+            if half_sol_flag == False and i == (len(cubes) - 1) and visited[i][j] == solution_num:
+                if j < 2:
+                    visited[i][j] = 0
+                    multiplicity[cubes[i][j][0] - 1] -= 1
+                    multiplicity[cubes[i][j][1] - 1] -= 1
+                    j += 1
+                else:
+                    visited[i][j] = 0
+                    multiplicity[cubes[i][j][0] - 1] -= 1
+                    multiplicity[cubes[i][j][1] - 1] -= 1
+                    next_half_solution = True
+
+            if next_half_solution:
+                break
+
+            if visited[i][j] == 0 and multiplicity[cubes[i][j][0] - 1] + 1 < 3 and multiplicity[
+                cubes[i][j][1] - 1] + 1 < 3:
+                visited[i][j] = solution_num
                 multiplicity[cubes[i][j][0] - 1] += 1
                 multiplicity[cubes[i][j][1] - 1] += 1
-                #  print(multiplicity[cubes[i][j][0]-1], " " , multiplicity[cubes[i][j][1]-1])
-
+                moving_forward = False
                 i += 1
-
-                movingForward = False
-
                 break
 
-        if movingForward == True:
-
+        if moving_forward:
             i = i - 1
-            doneBacktracking = False
-            while doneBacktracking != True and i >= 0:
+            done_backtracking = False
+            while not done_backtracking and i >= 0:
                 for k in range(3):
-                    # locate the last cube face and cube we used
-                    # print("f i:", i)
-                    # print("f k:", k)
-                    if visited[i][k] == solnNum:
+                    if visited[i][k] == solution_num:
                         visited[i][k] = 0
                         multiplicity[cubes[i][k][0] - 1] -= 1
                         multiplicity[cubes[i][k][1] - 1] -= 1
-
                         k = k + 1
                         while k < 3:
-                            # go right until we find a cube face we can use or backtrack again
-                            # print("s i:", i)
-                            # print("s k:", k)
-                            if visited[i][k] == 0 and (multiplicity[cubes[i][k][0] - 1] + 1) < 3 and (multiplicity[cubes[i][k][1] - 1] + 1) < 3:
-                                visited[i][k] = solnNum
+                            if visited[i][k] == 0 and (multiplicity[cubes[i][k][0] - 1] + 1) < 3 and (
+                                    multiplicity[cubes[i][k][1] - 1] + 1) < 3:
+                                visited[i][k] = solution_num
                                 multiplicity[cubes[i][k][0] - 1] += 1
                                 multiplicity[cubes[i][k][1] - 1] += 1
-                                doneBacktracking = True
+                                done_backtracking = True
                                 i += 1
                                 break
                             k = k + 1
                         break
-                if doneBacktracking != True:
+                if not done_backtracking:
                     i = i - 1
-
         if i == len(cubes):
-            halfSolFlag = True
+            half_sol_flag = True
 
-        if i == len(cubes) and solnNum != 2:
-            #print(i)
-            #print("First Run Finished")
-            for l in range(len(cubes)):
-                print(visited[l])
-            halfSolFlag = solve(cubes, 2)
-            #print("Second Run Finished")
-            for l in range(len(cubes)):
-                print(visited[l])
-            if halfSolFlag == False :
-                #print("Second Half Solution Not Found")
+        if i == len(cubes) and solution_num != 2:
+            half_sol_counter += 1
+            # print("First Half Solution")
+            # for t in range(len(visited)):
+            # print(visited[t])
+            half_sol_flag = solve_stack(cubes, visited, 2)
+
+            if not half_sol_flag:
                 i -= 1
 
-    if i == -1 :
-        #print("Finished Empty")
-        halfSolFlag = False
+        if i == len(cubes) and solution_num == 2:
+            for t in visited:
+                print(t)
 
-    return halfSolFlag
+    if i == -1:
+        half_sol_flag = False
+        # print("Number of half solutions: ", half_sol_counter)
+        # print("No Solution")
+
+    # if half_sol_flag and solution_num == 1:
+    # print("NUmber of half solutions: ", half_sol_counter)
+    # print("Complete Solution")
+    # for t in range(len(visited)):
+    #    print(visited[t])
+
+    # if half_sol_flag == False and solution_num == 1 and i == -1:
+    # print("No Solution")
+    # if half_sol_flag == True and solution_num == 2:
+    # print("Solution Found")
+
+    # have to think about exactly what data i want from the puzzles and
+    # write out every half solution to a file
+    # write out every solution to a file
+    # write whether the stack had a solution, true or false
+    return half_sol_flag
+
+
+def find_min_obs(cubes):
+    min_obs = len(cubes) + 1
+    i = len(cubes)
+
+    while i > 0:
+        solution = False
+        subsets = combinations(cubes, i)
+
+        for subset in subsets:
+            visited = [[0, 0, 0] for i in range(len(subset))]
+            solution = solve_stack(subset, visited, 1)
+            if not solution:
+                print("A 'No Solution' was found in a stack of ", i, " cubes!")
+                print("Minimum obstacle is now: ", min_obs - 1)
+                min_obs -= 1
+                for element in subset:
+                    print(element)
+                break
+            else:
+                print("A Solution Was Found")
+
+        if solution:
+            print("Every subset of ", i, " cubes had a solution")
+            print("Minimum Obstacle: ", min_obs)
+            if min_obs > len(cubes):
+                print("No Minimal Obstacle")
+            break
+        i -= 1
 
 
 # Puzzle 1
 color1 = [1 + math.floor(n * math.pi) % 30 for n in range(1, 181)]
 # Puzzle 2
-color2 = [(1 + math.floor( i * math.e % 30)) for i in range(1,181)]
+color2 = [(1 + math.floor(i * math.e % 30)) for i in range(1, 181)]
 # Puzzle 3
-color3 = [(1 + math.floor( i * math.sqrt(3) ) % 30) for i in range(1,181)]
+color3 = [(1 + math.floor(i * math.sqrt(3)) % 30) for i in range(1, 181)]
 # Puzzle 4
-color4 = [(1 + math.floor( i * math.sqrt(5)) % 30) for i in range(1,181)]
+color4 = [(1 + math.floor(i * math.sqrt(5)) % 30) for i in range(1, 181)]
 
-# Generate Cubes
-cubes1 = cubesGenerator(color1)
+# cubes = cubes_generator(color2)
 
-testCube = cubes1[0:3] + cubes1[3:30]
+cubes = [
+    [[11, 13], [9, 19]],
+    [[15, 26], [25, 30]],
+    [[2, 15], [25, 30]],
+    [[11, 23], [5, 10]],
+    [[5, 27], [6, 24]],
+    [[12, 15], [4, 10]],
+    [[21, 28], [3, 21]],
+    [[2, 7], [10, 12], [20, 29]],
+    [[4, 13], [8, 19], [19, 24]],
+    [[11, 19], [7, 24], [12, 25]],
+    [[7, 14], [8, 20], [7, 30]],
+    [[17, 23], [14, 22], [9, 24]],
+    [[12, 22], [5, 21], [17, 30]],
+    [[23, 24], [1, 3], [23, 27]],
+    [[3, 8], [28, 30], [29, 30]],
+    [[9, 18], [23, 14], [5, 8]],
+    [[1, 14], [4, 29], [15, 28]],
+    [[14, 16], [16, 18], [17, 28]],
+    [[25, 29], [24, 27], [27, 28]],
+    [[18, 30], [2, 13], [6, 22]],
+    [[4, 22], [6, 26], [3, 6]],
+    [[5, 9], [7, 17], [8, 16]],
+    [[11, 12], [26, 29], [6, 11]],
+    [[9, 22], [2, 20], [15, 25]],
+    [[22, 23], [21, 26], [3, 25]],
+    [[15, 27], [1, 16], [2, 21]],
+    [[4, 20], [13, 20], [21, 25]],
+    [[8, 12], [6, 7], [3, 13]],
+    [[11, 27], [16, 26], [1, 10]],
+    [[17, 17], [2, 20], [18, 18]]
+]
 
-# Output the cube stack
-for i in range(len(testCube)):
-    print("Cube", i + 1, testCube[i])
+visited = [[1, 0, 2],
+           [0, 2, 1],
+           [0, 1, 2],
+           [2, 1, 0],
+           [2, 0, 1],
+           [1, 2, 0],
+           [0, 2, 1],
+           [0, 0, 0],
+           [0, 0, 0],
+           [0, 0, 0],
+           [0, 0, 0],
+           [0, 0, 0],
+           [0, 0, 0],
+           [0, 0, 0],
+           [0, 0, 0],
+           [0, 0, 0],
+           [0, 0, 0],
+           [0, 0, 0],
+           [0, 0, 0],
+           [0, 0, 0],
+           [0, 0, 0],
+           [0, 0, 0],
+           [0, 0, 0],
+           [0, 0, 0],
+           [0, 0, 0],
+           [0, 0, 0],
+           [0, 0, 0],
+           [0, 0, 0],
+           [0, 0, 0],
+           [0, 0, 0]
+           ]
 
-# Generate visited array
-visited = [[0, 0, 0] for i in range(len(testCube))]
-
-# might try to create a function that will encapsulate findHalfSolution two times to search for a
-# complete solution
-
-# Searching for First Half Solution
-#solution = solve(testCube,1)
-
-
-#if solution:
-    #print("Solution Found")
-#else:
-    #print("No Solution Found")
-
-# Output visited array with half solutions
-#for i in range(len(testCube)):
-    #print("Cube", i + 1, visited[i])
-'''
-p = len(cubes1)
-minObs = len(cubes1) + 1
-while p>0:
-    for y in range(p):
-        testCube = cubes1[0:y] + cubes1[y:30]
-        solution = solve(testCube,1)
-        if not solution:
-            p -= 1
-            minObs -= 1
-            break
-        elif y == (p-1):
-            print("Minimal Obstacle has been found")
-            p = 0
-print("Minimal obstacle is", minObs)
-'''
+solve_stack(cubes, visited, 1)
